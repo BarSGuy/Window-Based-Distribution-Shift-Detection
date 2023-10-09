@@ -1,0 +1,14 @@
+numpy
+scipy
+torch
+tqdm
+matplotlib
+timm
+torchvision
+torchattacks==3.4.0
+PyYAML
+easydict
+alibi-detect==0.11.4
+scikit-learn
+requests==2.25.1
+Pillow<10.0.0,>=5.4.1
