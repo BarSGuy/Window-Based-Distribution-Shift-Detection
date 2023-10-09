@@ -13,25 +13,6 @@ from scipy.stats import ttest_1samp
 from torch.distributions import Categorical
 
 
-# def get_softmax_responses(logits_list, temperature=1.0):
-#     """
-#     Args:
-#         logits_list (list): List of PyTorch tensors or NumPy arrays, each containing a vector of logits.
-#         temperature (float, optional): Temperature parameter for softmax. Defaults to 1.0.
-#
-#     Returns:
-#         List of PyTorch tensors or NumPy arrays, each containing a vector of softmax responses corresponding to the input logits.
-#     """
-#     SR_list = []
-#     for logits in logits_list:
-#         if isinstance(logits, np.ndarray):
-#             logits = torch.from_numpy(logits)
-#         softmax = F.softmax(logits / temperature, dim=-1)
-#         SR = torch.max(softmax).item()
-#         SR_list.append(SR)
-#     return SR_list
-
-
 def get_softmax_responses(logits_list, temperature=1.0):
     """
     Args:
@@ -87,15 +68,6 @@ class SGC():
         """
         Initializes the SGC algorithm with the given parameters.
         Example usage:
-
-            S_m = sorted(generate_random_numbers_between_0_and_1(1000))
-            delta = 0.001
-            c_star = 0.5
-            bound = 'L'
-            sgc = SGC(S_m, delta, c_star, bound)
-            guaranteed_coverage, corresponding_theta= sgc.loop()
-
-
 
         Args:
             S_m (list or torch.Tensor): The m i.i.d samples - assuming we get a vector of kappa values of the instances,
@@ -259,23 +231,6 @@ class Shift_Detector():
     def __init__(self, C_num, delta):
         """
         Initialize the class with uncertainty estimators and parameters.
-        Example usage:
-
-            us_in_dist = sorted(generate_random_numbers_between_0_and_1(1000))
-            us_window = sorted(generate_random_numbers_between_0_and_1(1000))
-            C_num = 10
-            delta = 0.0001
-
-            detector = Shift_Detector(C_num, delta)
-
-            detector.fit_lower_bound(us_in_dist)
-            under_confidence_score = detector.detect_lower_bound_deviation(us_window)
-            detector.visualize_lower_bound()
-
-            detector.fit_upper_bound(us_in_dist)
-            over_confidence_score = detector.detect_upper_bound_deviation(us_window)
-            detector.visualize_upper_bound()
-
 
         Args:
             C_num (int): The number of different coverage values to bound. Note that C_num has to be big if way == second.
@@ -392,55 +347,12 @@ class Shift_Detector():
         final_list_lower = [x - sum(violations_lower) for x in final_list_lower]
         final_list_lower = [-x for x in final_list_lower]
 
-        # # get actual coverages lower
-        # zero_one_coverages_lower = []
-        # for threshold in self.Thresholds_For_Lower_Bounds:
-        #     zero_one_coverages_lower.append([1 if x > threshold else 0 for x in us_out_dist])
-        # zero_one_coverages_lower_modified, mask_lower = modify_arrays_lower(self.Coverage_Lower_Bounds,
-        #                                                                     zero_one_coverages_lower)
-        # violations_lower = [x for x, flag in zip(self.Coverage_Lower_Bounds, mask_lower) if flag]
-        # final_list_lower = [sum(sublist[i] for sublist in zero_one_coverages_lower_modified) for i in range(len(zero_one_coverages_lower_modified[0]))]
-        # final_list_lower1 = [final_list_lower[i] - sum(violations_lower) for i in range(len(final_list_lower))]
-        # final_list_lower1 = [-x for x in final_list_lower1]
-
-        # get actual coverages upper
-        # zero_one_coverages_upper = []
-        # for threshold in self.Thresholds_For_Upper_Bounds:
-        #     zero_one_coverages_upper.append([1 if x > threshold else 0 for x in us_out_dist])
-        #
-        # zero_one_coverages_upper_modified, mask_upper = get_violations_upper(self.Coverage_Upper_Bounds,
-        #                                                                     zero_one_coverages_upper)
-        # violations_upper = [x for x, flag in zip(self.Coverage_Upper_Bounds, mask_upper) if flag]
-        # final_list_upper = [sum(sublist[i] for sublist in zero_one_coverages_upper_modified) for i in
-        #                     range(len(zero_one_coverages_upper_modified[0]))]
-        # final_list_upper1 = [sum(violations_upper) - final_list_upper[i] for i in range(len(final_list_upper))]
-
-        ## get zero_one_coverages_upper
-        zero_one_coverages_upper = [[int(x > threshold) for x in us_out_dist] for threshold in
-                                    self.Thresholds_For_Upper_Bounds]
-        self.Actual_coverage_for_Upper = [sum(sublist) / len(sublist) for sublist in zero_one_coverages_upper]
-        # # modify zero_one_coverages_upper and get violations_upper
-        # zero_one_coverages_upper_modified, mask_upper = get_violations_upper(self.Coverage_Upper_Bounds,
-        #                                                                      zero_one_coverages_upper)
-        # violations_upper = [x for x, flag in zip(self.Coverage_Upper_Bounds, mask_upper) if flag] # keeps only violated coverages
-        #
-        # # calculate final_list_upper
-        # final_list_upper = [sum(sublist) for sublist in zip(*zero_one_coverages_upper_modified)]
-        # final_list_upper = [sum(violations_upper) - x for x in final_list_upper]
-        # # final_list_upper = [x - sum(violations_upper) for x in final_list_upper]
-
-
-        # final_list_old = [a + b for a, b in zip(final_list_upper, final_list_lower)]
-
-        # TODO: if you want the last working version, use p_value_old as the returned p-value and uncomment
-        # TODO: whats under get zero_one_coverages_upper, and the line with the commented TODO after it
         final_list = final_list_lower
         if max(final_list) == 0 and min(final_list) == 0:  # no violations!
             p_value = 1
         else:
             t_stat, p_value = ttest_1samp(final_list, 0, alternative='greater')
-            # t_stat, p_value_old = ttest_1samp(final_list_old, 0, alternative='greater') # TODO
-            # print(f'{p_value=}_{p_value_old=}')
+            # print(f'{p_value=}')
         return p_value
 
     # ========================================================
@@ -734,90 +646,6 @@ class Shift_Detector():
                                                      popmean=mean, alternative=tail)
         return t_statistic, p_value
 
-        # actual_coverages = [sum(x) / len(self.array_of_Xjs_lower[0]) for x in self.array_of_Xjs_lower]
-        # gaps = [b - a for a, b in zip(actual_coverages, self.Coverage_Lower_Bounds)]  # should all be negative
-        # gaps = [num if num >= 0 else 0 for num in gaps]
-        # actual_coverages1 = [sum(x) / len(self.array_of_Xjs_upper[0]) for x in self.array_of_Xjs_upper]
-        # gaps1 = [b - a for a, b in zip(self.Coverage_Upper_Bounds, actual_coverages1)]  # should all be negative
-        # gaps1 = [num if num >= 0 else 0 for num in gaps1]
-        # print("guy")
-        # indices = [i for i in range(len(gaps)) if gaps[i] > 0]
-        # cost_array = np.array(self.array_of_Xjs_lower)[indices].sum(axis=0)
-        # if len(indices) > 0:
-        #     pop_mean = sum(np.array(self.Coverage_Lower_Bounds)[indices])
-        # else:
-        #     pop_mean = 0
-        # if not isinstance(cost_array, np.ndarray) and cost_array == 0.0:
-        #     cost_array = [0.0]*len(self.array_of_Xjs_lower[0])
-        # actual_coverages1 = [sum(x) / len(self.array_of_Xjs_upper[0]) for x in self.array_of_Xjs_upper]
-        # gaps1 = [b - a for a, b in zip(self.Coverage_Upper_Bounds, actual_coverages1)]  # should all be negative
-        # gaps1 = [num if num >= 0 else 0 for num in gaps1]
-        # indices1 = [i for i in range(len(gaps1)) if gaps1[i] > 0]
-        # cost_array1 = np.array(self.array_of_Xjs_upper)[indices1].sum(axis=0)
-        # if len(indices) > 0:
-        #     pop_mean1 = sum(np.array(self.Coverage_Upper_Bounds)[indices1])
-        # else:
-        #     pop_mean1 = 0
-        # if not isinstance(cost_array1, np.ndarray) and cost_array1 == 0.0:
-        #     cost_array1 = [0.0]*len(self.array_of_Xjs_lower[0])
-        # final_cost_array = cost_array1 + cost_array
-        #
-        #
-        # t_statistic, p_value = stats.ttest_1samp(a=final_cost_array,
-        #                                          popmean=pop_mean + pop_mean1,
-        #                                          alternative='less')
-        # print("guy")
-        # if len(indices) == 0:
-        #     t_statistic, p_value = 1.0, 1.0
-        # else:
-        #     cost_array = np.array(self.array_of_Xjs_lower)[indices].sum(axis=0)
-        #     t_statistic, p_value = stats.ttest_1samp(a=cost_array,
-        #                                              popmean=sum(np.array(self.Coverage_Lower_Bounds)[indices]), alternative='less')
-        #
-        #
-        # actual_coverages = [sum(x) / len(self.array_of_Xjs_upper[0]) for x in self.array_of_Xjs_upper]
-        # gaps = [b - a for a, b in zip(self.Coverage_Upper_Bounds, actual_coverages)]  # should all be negative
-        # gaps = [num if num >= 0 else 0 for num in gaps]
-        # indices = [i for i in range(len(gaps)) if gaps[i] > 0]
-        # if len(indices) == 0:
-        #     t_statistic, p_value = 1.0, 1.0
-        # else:
-        #     cost_array = np.array(self.array_of_Xjs_upper)[indices].sum(axis=0) / len(self.array_of_Xjs_upper[0])
-        #     t_statistic, p_value = stats.ttest_1samp(a=cost_array,
-        #                                              popmean=sum(np.array(self.Coverage_Upper_Bounds)[indices]) / len(
-        #                                                  self.array_of_Xjs_upper[0]), alternative='less')
-
-        # if bound == 'L':
-        #     new_list_for_hyp = [sum(x) for x in zip(*self.array_of_Xjs_lower)]
-        #     mean = sum(self.Coverage_Lower_Bounds)
-        #     t_statistic, p_value = stats.ttest_1samp(a=new_list_for_hyp, popmean=mean, alternative=tail)
-        # else:
-        #     mean = sum(self.Coverage_Upper_Bounds)
-        #     new_list_for_hyp = [sum(x) for x in zip(*self.array_of_Xjs_upper)]
-        #     t_statistic, p_value = stats.ttest_1samp(a=new_list_for_hyp,
-        #                                              popmean=mean, alternative=tail)
-        # return t_statistic, p_value
-
-        # if bound == 'L':
-        #     actual_coverages = [sum(x)/len(self.array_of_Xjs_lower[0]) for x in self.array_of_Xjs_lower]
-        #     # index = self.find_largest_gap_index(actual_coverages, self.Coverage_Lower_Bounds)
-        #     p_values = []
-        #     for index in range(len(actual_coverages)):
-        #     # new_list_for_hyp = [sum(x) for x in zip(*self.array_of_Xjs_lower)]
-        #     # mean = sum(self.Coverage_Lower_Bounds)
-        #         t_statistic, p_value = stats.ttest_1samp(a=self.array_of_Xjs_lower[index], popmean=self.Coverage_Lower_Bounds[index], alternative=tail)
-        #         p_values.append(p_value)
-        # else:
-        #     actual_coverages = [sum(x)/len(self.array_of_Xjs_upper[0]) for x in self.array_of_Xjs_upper]
-        #     # index = self.find_largest_gap_index(self.Coverage_Upper_Bounds, actual_coverages)
-        #     p_values = []
-        #     for index in range(len(actual_coverages)):
-        #         t_statistic, p_value = stats.ttest_1samp(a=self.array_of_Xjs_upper[index],
-        #                                                  popmean=self.Coverage_Upper_Bounds[index], alternative=tail)
-        #         p_values.append(p_value)
-        # p_value = sum(p_values) / len(p_values)
-        # return t_statistic, p_value
-
     def _get_new_x_j(self, bound):
         """
         Calculating the new random variables for hypothesis test
@@ -858,37 +686,3 @@ class Shift_Detector():
                         f'Running Hypothesis Test for upper bound, Elapsed time: {timer() - timer_start:.3f} sec')
                     pbar.update()
                     self.array_of_Xjs_upper.append(new_X_js)
-
-
-if __name__ == '__main__':
-    import random
-
-
-    def generate_random_numbers_between_0_and_1(n):
-        """
-        Generate n random numbers between 0 and 1.
-
-        Args:
-            n (int): The number of random numbers to generate.
-
-        Returns:
-            A list of n random numbers between 0 and 1.
-        """
-        return [random.random() for _ in range(n)]
-
-
-    us_in_dist = sorted(generate_random_numbers_between_0_and_1(1000))
-    us_window = sorted(generate_random_numbers_between_0_and_1(1000))
-    C_num = 10
-    delta = 0.0001
-
-    detector = Shift_Detector(C_num, delta)
-
-    detector.fit_lower_bound(us_in_dist)
-    under_confidence_score = detector.detect_lower_bound_deviation(us_window)
-    detector.visualize_lower_bound()
-
-    detector.fit_upper_bound(us_in_dist)
-    over_confidence_score = detector.detect_upper_bound_deviation(us_window)
-    detector.visualize_upper_bound()
-    exit()

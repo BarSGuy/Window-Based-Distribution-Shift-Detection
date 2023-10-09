@@ -4,7 +4,6 @@
 
 # the run command for the paper: ./all_methods.sh mobilenetv3_small_075 resnet50 vit_tiny_patch16_224
 
-done
 for var in "$@"
 do
   echo "$var"

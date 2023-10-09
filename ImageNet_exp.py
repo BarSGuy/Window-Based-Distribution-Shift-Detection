@@ -902,8 +902,6 @@ def run_experiment(cfg):
         return
     # detecting shifts #
     result_dicts = []
-    # TODO: comment this return - if you want inference only, then keep it
-    # return
     for i in range(cfg.IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS):
         cfg.logging.info(f"Running experiment number {i}")
         # Shuffle input lists to ensure randomness

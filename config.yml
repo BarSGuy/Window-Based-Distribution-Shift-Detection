@@ -6,14 +6,14 @@ IMAGENET:
     PATH_TO_IMAGENET_A: '/home/guy.b/Desktop/imagenet_a'
     GENERATING_OOD:
       FGSM:
-        EPS: 0.0001 # 0.0005 # 0.0008
+        EPS: 0.0001
         BATCH_SIZE: 8
 
       CW:
-        C: 0.00000005 # TODO: the one i have on my external is:0.00000001
+        C: 0.00000005 
         KAPPA: 0
         STEPS: 10 # 1000
-        LR: 0.01 # TODO: the one i have on my external is:0.01
+        LR: 0.01 
 
       PGD:
         EPS: 0.0001
@@ -57,75 +57,4 @@ MY_DETECTOR:
   TEMP: 1
   UC_MECH: 'SR'
   SIGNIFICANCE_LEVEL: 0.05
-# =================================================================
 
-
-
-
-
-MODEL:
-  NAME: resnet50
-
-IN_DISTRIBUTION: Cifar10
-OUT_OF_DISTRIBUTION: Cifar10_CW # Cifar100, Cifar10_FGSM, Cifar10_CW, Cifar10_PGD, Cifar10_Gauss, Cifar10_Rotation, Cifar10_Zoom
-
-GENERATING_OOD:
-  FGSM:
-    EPS: 0.0008 # 0.0008
-    BATCH_SIZE: 64
-
-  CW:
-    C: 0.000001
-    KAPPA: 0
-    STEPS: 150 # 1000
-    LR: 0.01
-
-  PGD:
-    EPS: 0.0002
-    STEPS: 6 # 10
-    ALPHA: 1
-    RANDOM_START: True
-
-  GAUSS_NOISE:
-    STD: 0.005 # 0.01, 0.02, 0.03, 0.04, 0.05
-
-  ROTATE:
-    ANGLE: 25 # 2, 5, 10, 15, 20, 25
-
-  ZOOM:
-    FACTOR: 0.95 # 1.3, 1.2, 1.1, 1.05, 0.95, 0.9, 0.8, 0.7
-
-
-
-
-
-ABLATION_STUDY:
-  OODS: [ 'Cifar10_Gauss' ] # [ 'Cifar100', 'Cifar10_FGSM', 'Cifar10_CW', 'Cifar10_PGD', 'Cifar10_Gauss', 'Cifar10_Rotation', 'Cifar10_Zoom' ]
-  C_NUM: [ 5 ]
-  DELTA: [ 0.01 ]
-  TEMP: [ 0.5 ]
-  UC_MECH: [ 'SR' ] #['SR', 'Ent']
-
-DETECTORS: [ 'Ours',
-             'ks_embs',
-             'ks_logits',
-             'ks_softmaxes',
-             'mmd_embs',
-             'mmd_logits',
-             'mmd_softmaxes' ]
-
-EXPERIMENT:
-  NUM_RANDOM_RUNS: 10
-  NUM_BOOTSTRAP_RUNS: 100
-WINDOW_SIZES: [ 10, 20, 50 ] # [ 10, 20, 50, 100, 200, 500, 1000, 5000 ] # [ 50, 100, 1000 ] # [ 10, 20, 50, 100, 200, 500, 1000, 5000 ]
-
-PATH_TO_LOGITS: '/home/guy.b/code_updated/outputs_generator/logits'
-# '/Users/guy.b/Desktop/phd/papers/Distribution Shift/code_updated/outputs_generator/logits'
-PATH_TO_SAVE_FIGURES: '/home/guy.b/code_updated/figures'
-# '/Users/guy.b/Desktop/phd/papers/Distribution Shift/code_updated/figures'
-PATH_TO_DICTIONARIES: '/home/guy.b/code_updated/experiments'
-# '/Users/guy.b/Desktop/phd/papers/Distribution Shift/code_updated/experiments'
-
-NUM_GPUS: 1
-NUM_WORKERS: 8
-SEED: 0
