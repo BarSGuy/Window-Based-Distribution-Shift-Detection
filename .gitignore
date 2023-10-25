@@ -1,3 +1,6 @@
 playground/data/
 __pycache__/
 playground/__pycache__/
+garbage.py
+outputs/
+imagenet_experiments/

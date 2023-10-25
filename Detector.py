@@ -281,71 +281,50 @@ class Shift_Detector():
                 pbar.set_description(f'Fitting for lower bound, Elapsed time: {timer() - timer_start:.3f} sec')
                 pbar.update()
 
-    def fit_upper_bound(self, us_in_dist):
-        """
-         Runs the test and creates the following attributes:
-             Coverage_Upper_Bounds: A list of upper bounds.
-             Thresholds_For_Upper_Bounds: A list of thresholds for upper bounds.
-             Actual_coverage_for_Upper: Actual coverage calculated with thresholds of upper bounds.
-             bad_events_percentage_for_upper: The percentage that the upper bound didn't hold.
-         """
-        self.S_n_us = us_in_dist
-
-        num_iterations = len(self.c_star_arr)
-        self.Coverage_Upper_Bounds = []
-        self.Thresholds_For_Upper_Bounds = []
-
-        with tqdm.tqdm(desc="Fitting for upper bound", total=num_iterations, file=sys.stdout) as pbar:
-            timer_start = timer()
-            # This is a single iteration
-            for c in self.c_star_arr:
-                # Initializing the algorithm
-                algorithm = SGC(self.S_n_us, self.delta, c, 'U')
-                # Gets the coverage bound, theta
-                coverage_upper_bound, threshold_for_upper_bound = algorithm.loop()
-
-                # Appending to the arrays of the coverage bound and thresholds
-                self.Coverage_Upper_Bounds.append(coverage_upper_bound)
-                self.Thresholds_For_Upper_Bounds.append(threshold_for_upper_bound)
-
-                pbar.set_description(f'Fitting for upper bound, Elapsed time: {timer() - timer_start:.3f} sec')
-                pbar.update()
-
     def detect(self, us_out_dist):
 
         def get_violations_lower(nums, arrays):
-            mask = []
-            for i in range(len(nums)):
-                if nums[i] > sum(arrays[i]) / len(arrays[i]):  # didn't hold!
-                    mask.append(1)  # didn't hold!
-                else:
-                    arrays[i] = [0] * len(arrays[i])
-                    mask.append(0)  # hold!
-            return arrays, mask
+                        # Convert input to numpy arrays
+            nums = np.array(nums)
+            arrays = np.array(arrays)
 
-        def get_violations_upper(nums, arrays):
-            mask = []
-            for i in range(len(nums)):
-                if nums[i] < sum(arrays[i]) / len(arrays[i]):  # didn't hold!
-                    mask.append(1)  # didn't hold!
-                else:
-                    arrays[i] = [0] * len(arrays[i])
-                    mask.append(0)  # hold!
-            return arrays, mask
+            # Compute the mean of each row in arrays
+            mean_vals = arrays.mean(axis=1)
 
-        # get zero_one_coverages_lower
-        zero_one_coverages_lower = [[int(x > threshold) for x in us_out_dist] for threshold in
-                                    self.Thresholds_For_Lower_Bounds]
+            # Compute the mask based on the condition
+            mask = (nums > mean_vals).astype(int)
+
+            # Set arrays rows to zeros where the condition didn't hold
+            arrays[mask == 0] = 0
+
+            return arrays.tolist(), mask.tolist()
+            # mask = []
+            # for i in range(len(nums)):
+            #     if nums[i] > sum(arrays[i]) / len(arrays[i]):  # didn't hold!
+            #         mask.append(1)  # didn't hold!
+            #     else:
+            #         arrays[i] = [0] * len(arrays[i])
+            #         mask.append(0)  # hold!
+            # return arrays, mask
+
+        us_out_dist_np = np.array(us_out_dist)
+        thresholds_np = np.array(self.Thresholds_For_Lower_Bounds)
+        # Broadcasting to create a 2D array of shape (len(thresholds), len(us_out_dist))
+        zero_one_coverages_lower_np = (us_out_dist_np > thresholds_np[:, None]).astype(int)
+        zero_one_coverages_lower = zero_one_coverages_lower_np.tolist()
+
         self.Actual_coverage_for_Lower = [sum(sublist) / len(sublist) for sublist in zero_one_coverages_lower]
+
         # modify zero_one_coverages_lower and get violations_lower
         zero_one_coverages_lower_modified, mask_lower = get_violations_lower(self.Coverage_Lower_Bounds,
                                                                              zero_one_coverages_lower)
         violations_lower = [x for x, flag in zip(self.Coverage_Lower_Bounds, mask_lower) if flag] # will keep only violated thresholds
-
+        sum_violations_lower = sum(violations_lower)
         # calculate final_list_lower
         final_list_lower = [sum(sublist) for sublist in zip(*zero_one_coverages_lower_modified)] # sums across samples
-        final_list_lower = [x - sum(violations_lower) for x in final_list_lower]
-        final_list_lower = [-x for x in final_list_lower]
+        
+        final_list_lower = [-(x - sum_violations_lower) for x in final_list_lower]
+
 
         final_list = final_list_lower
         if max(final_list) == 0 and min(final_list) == 0:  # no violations!
@@ -354,335 +333,13 @@ class Shift_Detector():
             t_stat, p_value = ttest_1samp(final_list, 0, alternative='greater')
             # print(f'{p_value=}')
         return p_value
-
-    # ========================================================
-
-    def detect_lower_bound_deviation(self, us_window, return_p_value=False):
-        """
-        detects deviation between actual coverage and expected coverage for a given lower bound.
-
-        Parameters:
-        -----------
-        us_window: list
-            A list of values to use as the upper bound for each iteration.
-        return_p_value: Boolean
-            A Flag indicating whether to return the p-value or not.
-
-        Returns:
-        --------
-        float
-            A score representing the degree of under confidence in the estimates, or the p-value if return_p_value is True.
-        """
-        self.S_m_us = us_window
-        self.S_m_tot_size = len(self.S_m_us)
-        self.Actual_coverage_for_Lower = []
-        self.bad_events_percentage_for_lower = 0
-        num_iterations = len(self.Coverage_Lower_Bounds)
-        with tqdm.tqdm(desc="Testing for lower bound deviation", total=num_iterations, file=sys.stdout) as pbar:
-            timer_start = timer()
-            # This is a single iteration
-            for coverage_lower_bound, threshold_for_lower_bound in zip(self.Coverage_Lower_Bounds,
-                                                                       self.Thresholds_For_Lower_Bounds):
-
-                # Calculating the actual coverage
-                actual_coverage_for_lower_bound = self._calculate_coverage_on_valid(threshold_for_lower_bound)
-                # Checking if we got a bad event
-                if actual_coverage_for_lower_bound < coverage_lower_bound:
-                    self.bad_events_percentage_for_lower = self.bad_events_percentage_for_lower + 1
-
-                # appending to actual coverage array
-                self.Actual_coverage_for_Lower.append(actual_coverage_for_lower_bound)
-
-                pbar.set_description(
-                    f'Testing for lower bound deviation, Elapsed time: {timer() - timer_start:.3f} sec')
-                pbar.update()
-        return self._get_under_confidence_score(return_p_value)
-
-    def get_lower_bounds(self):
-        return self.Coverage_Lower_Bounds
-
+    
     def get_actual_coverage_for_lower(self):
         return self.Actual_coverage_for_Lower
-
-    def get_actual_coverage_for_upper(self):
-        return self.Actual_coverage_for_Upper
-
-    def get_upper_bounds(self):
-        return self.Coverage_Upper_Bounds
+    
+    def get_lower_bounds(self):
+        return self.Coverage_Lower_Bounds
 
     def get_desired_coverages(self):
         return self.c_star_arr
 
-    def visualize_lower_bound(self, title='Lower Bound', save_path="./figures"):
-        """
-        Args:
-            title: The title of the graph
-            save_path: The path to save the plot
-
-
-        Visualizes the lower bound:
-        Plots two graphs of actual bounds vs actual coverage values and difference
-        """
-
-        # Create directory if it doesn't exist
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
-        fig.tight_layout(pad=3.0, w_pad=4.0)
-
-        fig.suptitle(title)
-
-        # Plot actual coverage vs lower bound
-        axs[0].plot(self.Coverage_Lower_Bounds, self.Actual_coverage_for_Lower, "b")
-        axs[0].plot(self.Coverage_Lower_Bounds, self.Coverage_Lower_Bounds, "g--", label="($y=x$) Lower Bound")
-        axs[0].legend(loc='best')
-        axs[0].grid()
-
-        axs[0].set_ylabel("Empirical Coverage")
-        axs[0].set_xlabel('$c^*$')
-
-        # Plot difference
-        diff = torch.tensor(self.Actual_coverage_for_Lower) - torch.tensor(self.Coverage_Lower_Bounds)
-        axs[1].plot(self.Coverage_Lower_Bounds, diff, "r")
-        # axs[1].legend(loc='best')
-        axs[1].grid()
-
-        axs[1].set_ylabel("Gap")
-        axs[1].set_xlabel('$c^*$')
-
-        # Save plot
-        plt.savefig(os.path.join(save_path, title + '.pdf'))
-        plt.show()
-
-    def detect_upper_bound_deviation(self, us_window, return_p_value=False):
-        """
-        detects deviation between actual coverage and expected coverage for a given lower bound.
-
-        Parameters:
-        -----------
-        us_window: list
-            A list of values to use as the upper bound for each iteration.
-        return_p_value: Boolean
-            A Flag indicating whether to return the p-value or not.
-
-        Returns:
-        --------
-        float
-            A score representing the degree of under confidence in the estimates, or the p-value if return_p_value is True.
-        """
-        self.S_m_us = us_window
-        self.S_m_tot_size = len(self.S_m_us)
-        self.Actual_coverage_for_Upper = []
-        self.bad_events_percentage_for_upper = 0
-        num_iterations = len(self.Coverage_Upper_Bounds)
-        with tqdm.tqdm(desc="Testing for upper bound deviation", total=num_iterations, file=sys.stdout) as pbar:
-            timer_start = timer()
-            # This is a single iteration
-            for coverage_upper_bound, threshold_for_upper_bound in zip(self.Coverage_Upper_Bounds,
-                                                                       self.Thresholds_For_Upper_Bounds):
-
-                # Calculating the actual coverage
-                actual_coverage_for_upper_bound = self._calculate_coverage_on_valid(threshold_for_upper_bound)
-                # Checking if we got a bad event
-                if actual_coverage_for_upper_bound < coverage_upper_bound:
-                    self.bad_events_percentage_for_upper = self.bad_events_percentage_for_upper + 1
-
-                # appending to actual coverage array
-                self.Actual_coverage_for_Upper.append(actual_coverage_for_upper_bound)
-
-                pbar.set_description(
-                    f'Testing for upper bound deviation, Elapsed time: {timer() - timer_start:.3f} sec')
-                pbar.update()
-        return self._get_over_confidence_score(return_p_value)
-
-    def visualize_upper_bound(self, title='Upper Bound', save_path="./figures"):
-        """
-        Args:
-            title: The title of the graph
-            save_path: The path to save the plot
-
-        Visualizes the upper bound:
-        Plots two graphs of actual bounds vs actual coverage values and difference
-        """
-
-        # Create directory if it doesn't exist
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
-        fig.tight_layout(pad=3.0, w_pad=4.0)
-
-        fig.suptitle(title)
-
-        # Plot actual coverage vs upper bound
-        axs[0].plot(self.Coverage_Upper_Bounds, self.Actual_coverage_for_Upper, "b")
-        axs[0].plot(self.Coverage_Upper_Bounds, self.Coverage_Upper_Bounds, "g--", label="($y=x$) Upper Bound")
-        axs[0].legend(loc='best')
-        axs[0].grid()
-
-        axs[0].set_ylabel("Empirical Coverage")
-        axs[0].set_xlabel('$c^*$')
-
-        # Plot difference
-        diff = torch.tensor(self.Actual_coverage_for_Upper) - torch.tensor(self.Coverage_Upper_Bounds)
-        axs[1].plot(self.Coverage_Upper_Bounds, diff, "r")
-        # axs[1].legend(loc='best')
-        axs[1].grid()
-
-        axs[1].set_ylabel("Gap")
-        axs[1].set_xlabel('$c^*$')
-
-        # Save plot
-        plt.savefig(os.path.join(save_path, title + '.pdf'))
-        plt.show()
-
-    # =================================================================
-
-    def _get_under_confidence_score(self, return_p_value):
-        """
-        Calculate the under-confidence score for the given data using hypothesis testing.
-
-        args:
-            return_p_value: a flag to indicate whether to return the p-value or not.
-
-        Returns:
-            The under-confidence score.
-        """
-        # Run a hypothesis test to calculate the p-value for under-confidence
-        _, p_value_under = self._hypothesis_test('L')
-        if return_p_value:
-            return p_value_under
-        # Calculate the under-confidence score as 1 minus the p-value
-        self.phi_under = 1 - p_value_under
-        # Return the under-confidence score
-        return self.phi_under
-
-    def _get_over_confidence_score(self, return_p_value):
-        """
-        Calculate the over-confidence score for the given data using hypothesis testing.
-
-        args:
-            return_p_value: a flag to indicate whether to return the p-value or not.
-
-        Returns:
-            The under-confidence score.
-        """
-        # Run a hypothesis test to calculate the p-value for over-confidence
-        _, p_value_upper = self._hypothesis_test('U')
-        if return_p_value:
-            return p_value_upper
-        # Calculate the over-confidence score as 1 minus the p-value
-        self.phi_upper = 1 - p_value_upper
-        # Return the under-confidence score
-        return self.phi_upper
-
-    def _calculate_coverage_on_valid(self, theta):
-        """
-        Calculates the actual coverage given the threshold theta and the bound on the coverage.
-
-        Args:
-            theta (torch.Tensor): The threshold value.
-            bound (str): The bound on the coverage ('L' for lower bound or 'U' for upper bound).
-
-        Returns:
-            float: The actual coverage given the threshold theta.
-        """
-        # Convert S_m_us to a torch tensor if it is not already.
-        if not torch.is_tensor(self.S_m_us):
-            self.S_m_us = torch.tensor(self.S_m_us)
-        # Get the indices where S_m_us is greater than or equal to theta.
-        soft_max_vector_new = self.S_m_us[self.S_m_us >= theta.item()]
-        # soft_max_vector_new = self.S_m_us[self.S_m_us > theta.item()]
-        # Calculate the actual coverage
-        coverage = len(soft_max_vector_new) / len(self.S_m_us)
-
-        return coverage
-
-    def find_largest_gap_index(self, list1, list2):
-        """
-        Find the index i of the largest gap between the values in two lists.
-
-        Args:
-            list1 (list): A list of numeric values.
-            list2 (list): A list of numeric values with the same length as list1.
-
-        Returns:
-            int: The index i of the largest gap between the values in list1 and list2.
-        """
-        # Find the differences between corresponding elements in the two lists
-        differences = [b - a for a, b in zip(list1, list2)]
-        # Find the index of the maximum difference
-        max_diff_index = differences.index(max(differences))
-        return max_diff_index
-
-    def _hypothesis_test(self, bound):
-        """
-        Runs a hypothesis test on the data based on a given bound.
-
-        Args:
-            bound (str): A string indicating the bound to use for the test ('L' for lower bound or 'U' for upper bound).
-
-        Returns:
-            A tuple containing the t-statistic and p-value from the hypothesis test.
-        """
-        self._get_new_x_j(bound)
-        if bound == 'L':
-            tail = 'less'
-        else:
-            tail = 'greater'
-        from scipy import stats
-        # Running Hypothesis test
-        # H_0: both values are the same
-        # H_1: the value of actual is {tail} than 0.5
-        if bound == 'L':
-            new_list_for_hyp = [sum(x) for x in zip(*self.array_of_Xjs_lower)]
-            mean = sum(self.Coverage_Lower_Bounds)
-            t_statistic, p_value = stats.ttest_1samp(a=new_list_for_hyp, popmean=mean, alternative=tail)
-        else:
-            mean = sum(self.Coverage_Upper_Bounds)
-            new_list_for_hyp = [sum(x) for x in zip(*self.array_of_Xjs_upper)]
-            t_statistic, p_value = stats.ttest_1samp(a=new_list_for_hyp,
-                                                     popmean=mean, alternative=tail)
-        return t_statistic, p_value
-
-    def _get_new_x_j(self, bound):
-        """
-        Calculating the new random variables for hypothesis test
-
-        Args:
-            bound: the bound we are calculating for
-
-        Saves: an array of arrays, the inner array is an array of 0/1's and its average should
-        as the coverage bound
-
-        """
-        self.array_of_Xjs_lower = []
-        self.array_of_Xjs_upper = []
-        num_iterations = len(self.Thresholds_For_Lower_Bounds)
-        if bound == "L":
-            with tqdm.tqdm(desc="Running Hypothesis Test for lower bound", total=num_iterations,
-                           file=sys.stdout) as pbar:
-                timer_start = timer()
-                for theta_i in self.Thresholds_For_Lower_Bounds:
-                    new_X_js = [0] * self.S_m_tot_size
-                    for j, k_j in enumerate(self.S_m_us):
-                        if k_j >= theta_i:
-                            new_X_js[j] = 1
-                    pbar.set_description(
-                        f'Running Hypothesis Test for lower bound, Elapsed time: {timer() - timer_start:.3f} sec')
-                    pbar.update()
-                    self.array_of_Xjs_lower.append(new_X_js)
-        else:
-            with tqdm.tqdm(desc="Running Hypothesis Test for upper bound", total=num_iterations,
-                           file=sys.stdout) as pbar:
-                timer_start = timer()
-                for theta_i in self.Thresholds_For_Upper_Bounds:
-                    new_X_js = [0] * self.S_m_tot_size
-                    for j, k_j in enumerate(self.S_m_us):
-                        if k_j >= theta_i:
-                            new_X_js[j] = 1
-                    pbar.set_description(
-                        f'Running Hypothesis Test for upper bound, Elapsed time: {timer() - timer_start:.3f} sec')
-                    pbar.update()
-                    self.array_of_Xjs_upper.append(new_X_js)

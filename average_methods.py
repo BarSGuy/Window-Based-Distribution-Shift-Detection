@@ -2,6 +2,7 @@ import yaml
 import logging
 from easydict import EasyDict as edict
 from ImageNet_exp import *
+
 import yaml
 from utils import *
 
@@ -40,8 +41,5 @@ if __name__ == '__main__':
     # Add the console handler to the logger
     logger.addHandler(console_handler)
     cfg['logging'] = logger
-    
-    run_experiment(cfg)
-    exit()
-    
-    
+
+    average_all(cfg)

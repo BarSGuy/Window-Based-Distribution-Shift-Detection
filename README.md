@@ -20,7 +20,7 @@ Our methodology is intricately designed to pinpoint deviations in the input dist
 ## 🚀 Getting Started
 
 ### 🔧 Prerequisites
-Before diving in, ensure the following dependencies are installed:
+Install the requirements:
 ```bash
 pip install -r requirements.txt
 ```
@@ -48,7 +48,7 @@ PATH_TO_IMAGENET_O: <path to ImageNet-O dataset>
 PATH_TO_IMAGENET_A: <path to ImageNet-A dataset>
 PATH_TO_RESULTS: <path to store results>
 PATH_TO_SAVE_OUTPUTS: <path to save logits/embs>
-PATH_TO_SAVE_ACCURACIES: <path to save model accuracy on detected shifts>
+PATH_TO_SAVE_ACCURACIES: <path to save model accuracy on the shifts used in the paper>
 ```
 
 
@@ -59,20 +59,49 @@ Run the script with your chosen model parameters:
 chmod +x all_methods.sh
 ./all_methods.sh mobilenetv3_small_075 resnet50 vit_tiny_patch16_224
 ```
-The above command will:
-   * Infer the ImageNet dataset (test set) and the Out-Of-Distribution (OOD) datasets (as detailed in our paper).
-   * Evaluate the shift detection performance of all detectors over these OOD datasets.
-   * Consolidate and save results, specifically:
-     - Logits/embs of all datasets (both ID and OOD) required by the detectors.
-     - Accuracy of the models over all datasets (both ID and OOD).
-     - All performance metrics used for evaluating the detectors (refer to the paper for the metrics used).
+The given command executes the following:
+
+- **Inference**:
+  - Processes the ImageNet dataset (test set).
+  - Processes the Out-Of-Distribution (OOD) datasets (detailed in our paper).
+
+- **Evaluation**:
+  - Assesses the shift detection capabilities of all detectors on the OOD datasets.
+
+- **Result Saving**:
+  - **Logits/Embeddings**: Saves the logits/embs of all models for all datasets (both In-Distribution and OOD). 
+    - 📍 Path: `<PATH_TO_SAVE_OUTPUTS>`
+  - **Model Accuracy**: Records the accuracy of each model across all datasets.
+    - 📍 Path: `<PATH_TO_SAVE_ACCURACIES>`
+  - **Performance Metrics**: Retains all metrics (as mentioned in our paper) used for detector evaluations. Notably:
+    - In the specified `<PATH_TO_RESULTS>`, a new 'imagenet' directory is created.
+    - Within 'imagenet', nested folders follow the naming convention: `imagenet_vs_<OOD_DATASET>_<MODEL>`. Each folder contains shift detection performances for a specific OOD dataset.
+    - The 'imagenet' directory also holds an average performance summary for each model across all OOD datasets.
+
+- **Visualizations**:
+  - Generates and saves the detection times figure from our paper, which depicts the run-time in seconds against the detection-training set size.
+    - 📍 Path: `<PATH_TO_RESULTS>`
+
 
 
 > **Note**: Our framework seamlessly integrates with any model from the [`timm` library](https://github.com/huggingface/pytorch-image-models), making them valid arguments for the `all_methods.sh` script.
 
-## Distribution Shift Playground Notebook
+## 📓 Explore with the Distribution Shift Detector Notebook
+
+Dive into our hands-on Jupyter notebook here:
+[Distribution Shift Detector Notebook](./playground/Distribution%20shift%20playground.ipynb)
+
+In this interactive guide:
+- **Walkthrough**: Understand the step-by-step process to leverage our distribution shift detector.
+- **Illustrative Examples**: Witness the power of our methodology through visual and practical demonstrations.
+- **Your Own Dataset**: Learn how to apply our distribution shift detection on your custom datasets, making it adaptable to your unique needs.
+
+Take full advantage of this resource to gain in-depth insights and fine-tune the detection mechanism for your specific use cases.
+
+
+<!-- ## Distribution Shift Playground Notebook
 
 Navigate to our interactive Jupyter notebook located at:
 [Distribution Shift Playground](./playground/Distribution%20shift%20playground.ipynb)
 
-This notebook offers a detailed walkthrough on how to utilize our distribution shift detector. It also includes illustrative examples to enhance understanding.
+This notebook offers a detailed walkthrough on how to utilize our distribution shift detector. It also includes illustrative examples to enhance understanding. -->

@@ -32,29 +32,29 @@ IMAGENET:
 
   EXPERIMENT:
     SEED: 42
-    OOD: 'imagenet_zoom'
+    OOD: 'imagenet_o'
     MMD_FIT_SIZE: 1000
     KS_FIT_SIZE: 49000
     TRAIN_SIZE: 49000
-    NUM_RANDOM_RUNS: 15
+    NUM_RANDOM_RUNS: 3 # 15
     NUM_BOOTSTRAP_RUNS: 100
     WINDOW_SIZES: [ 10, 20, 50, 100, 200, 500, 1000 ]
     DETECTORS: [ 'my_detector']
-#   DETECTORS: [ 'my_detector', 'drift_ks_embs', 'drift_ks_logits', 'drift_ks_softmaxes',
-#                  'drift_mmd_embs', 'drift_mmd_logits', 'drift_mmd_softmaxes', 'drift_single_softmaxes', 'drift_single_entropies' ]
-    PATH_TO_RESULTS: '/home/guy.b/code_updated/imagenet_experiments'
+    #DETECTORS: [ 'my_detector', 'drift_ks_embs', 'drift_ks_logits', 'drift_ks_softmaxes',
+     #             'drift_mmd_embs', 'drift_mmd_logits', 'drift_mmd_softmaxes', 'drift_single_softmaxes', 'drift_single_entropies' ]
+    PATH_TO_RESULTS: '/home/guy.b/Window-Based-Distribution-Shift-Detection/imagenet_experiments'
 
   MODEL: 'resnet50'
-  PATH_TO_SAVE_OUTPUTS: '/home/guy.b/code_updated/outputs'
+  PATH_TO_SAVE_OUTPUTS: '/home/guy.b/Window-Based-Distribution-Shift-Detection/outputs' # '/home/guy.b/code_updated/outputs'
   BATCH_SIZE: 64
-  PATH_TO_SAVE_ACCURACIES: '/home/guy.b/code_updated/imagenet_experiments/imagenet/accuracies.csv'
-  DEVICE_INDEX: 1
+  PATH_TO_SAVE_ACCURACIES: '/home/guy.b/Window-Based-Distribution-Shift-Detection/imagenet_experiments/imagenet/accuracies.csv' # '/home/guy.b/code_updated/imagenet_experiments/imagenet/accuracies.csv'
+  DEVICE_INDEX: 0
   NUM_WORKERS: 8
 
 MY_DETECTOR:
-  C_NUM: 50
-  DELTA: 0.001
-  TEMP: 1
-  UC_MECH: 'SR'
+  C_NUM: 10
+  DELTA: 0.01
+  TEMP: 1.0
+  UC_MECH: 'Ent'
   SIGNIFICANCE_LEVEL: 0.05
 

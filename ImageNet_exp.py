@@ -22,7 +22,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-## ================================ inference ================================ ##
+# ====================================================================================== #
+#                               Inference datasets                                       #
+# ====================================================================================== #
 
 
 def infer_images(cfg, dataloader, model, threshold=100000000):
@@ -300,7 +302,7 @@ def pgd_inference(cfg, model_arch, dataloader, epsilon, alpha, steps, random_sta
     return logits, targets, acc_before, acc_after
 
 
-# ================================ inference - high level ================================ #
+# ======================= inference - helpers ======================= #
 def inference_dataset(cfg, path_to_dataset, get_embs=False, threshold=100000000, suffix=''):
     # model, transform = load_model(cfg.IMAGENET.MODEL, embs_model=get_embs)
     model, transform = load_model(cfg.IMAGENET.MODEL)
@@ -483,360 +485,10 @@ def attack_dataset(cfg, path_to_dataset, get_embs=False, attack='fgsm'):
 
     return path
 
+# ====================================================================================== #
+#                                OOD Experiments                                         #
+# ====================================================================================== #
 
-# ================================ getting detection times - for user ================================ #
-def save_detection_times(cfg):
-    # Inference and load in dist and out dist
-    path = inference_dataset(cfg, path_to_dataset=cfg.IMAGENET.DATASETS.PATH_TO_IMAGENET, suffix='_imagenet_')
-    logits_in = load_pickle_file(path)
-    softmaxes_in = F.softmax(logits_in, dim=1)
-    path = inference_dataset(cfg, path_to_dataset=cfg.IMAGENET.DATASETS.PATH_TO_IMAGENET, suffix='_imagenet_',
-                             get_embs=True)
-    embs_in = load_pickle_file(path)
-    (logits_in, softmaxes_in, embs_in) = (
-        shuffle_tensor_rows(logits_in),
-        shuffle_tensor_rows(softmaxes_in),
-        shuffle_tensor_rows(embs_in),
-    )
-    logits_in_train, logits_in_val = split_array(logits_in, cfg.IMAGENET.EXPERIMENT.TRAIN_SIZE)
-    softmaxes_in_train, softmaxes_in_val = split_array(softmaxes_in, cfg.IMAGENET.EXPERIMENT.TRAIN_SIZE)
-    embs_in_train, embs_in_val = split_array(embs_in, cfg.IMAGENET.EXPERIMENT.TRAIN_SIZE)
-    sizes = [10, 100, 1000, 5000, 10000, 20000, 30000, 40000, 1000000]
-    results_dicts = []
-    cfg.IMAGENET.EXPERIMENT.MMD_FIT_SIZE = 1000
-    for i in range(3):
-        print('run number ' + str(i))
-        # Initialize results_dict
-        results_dict = edict({})
-        results_dict.in_vs_in = edict({})
-        for size in sizes:
-            print(f'        {size=}')
-            cfg.logging.info(f"Fitting detectors")
-            # Mine
-            # size = 1000000
-            if size > 40000:
-                import numpy as np
-                def concatenate_array(a, N):
-                    K, L = a.shape
-                    if K >= N:
-                        return a[:N, :]
-                    else:
-                        repetitions = (N + K - 1) // K
-                        return torch.tensor(np.concatenate([a] * repetitions, axis=0)[:N, :])
-
-                logits_in_train = concatenate_array(logits_in_train, sizes[-1])
-                softmaxes_in_train = concatenate_array(softmaxes_in_train, sizes[-1])
-                embs_in_train = concatenate_array(embs_in_train, sizes[-1])
-
-            my_detector = MyDetector(c_num=cfg.MY_DETECTOR.C_NUM, delta=cfg.MY_DETECTOR.DELTA,
-                                     temprature=cfg.MY_DETECTOR.TEMP, uncertainty_mechanism=cfg.MY_DETECTOR.UC_MECH)
-            my_detector.fit(logits_in_train[:size])
-            # Ks - embs
-            drift_ks_embs = Ks()
-            drift_ks_embs.fit(embs_in_train[:size])
-            # Ks - logits
-            drift_ks_logits = Ks()
-            drift_ks_logits.fit(logits_in_train[:size])
-            # Ks - softmax
-            drift_ks_softmaxes = Ks()
-            drift_ks_softmaxes.fit(softmaxes_in_train[:size])
-            # Single instance - softmax
-            drift_single_softmaxes = Single_SR()
-            drift_single_softmaxes.fit(logits_in_train[:size])
-            # Single instance - entropy
-            drift_single_entropies = Single_Ent()
-            drift_single_entropies.fit(logits_in_train[:size])
-
-            if size <= cfg.IMAGENET.EXPERIMENT.MMD_FIT_SIZE:
-                # Mmd - embs
-                drift_mmd_embs = Mmd()
-                drift_mmd_embs.fit(embs_in_train[:size].numpy())
-                # Mmd - logits
-                drift_mmd_logits = Mmd()
-                drift_mmd_logits.fit(logits_in_train[:size].numpy())
-                # Mmd - softmax
-                drift_mmd_softmaxes = Mmd()
-                drift_mmd_softmaxes.fit(softmaxes_in_train[:size].numpy())
-
-            # detect in_vs_in
-            window_size = 10
-            cfg.logging.info(f"Detecting")
-            windowed_embs_in_val, windowed_logits_in_val, windowed_softmaxes_in_val = embs_in_val[
-                                                                                      :window_size], logits_in_val[
-                                                                                                     :window_size], softmaxes_in_val[
-                                                                                                                    :window_size]
-            results_dict.in_vs_in[str(size)] = edict({
-                'my_detector': my_detector.detect(windowed_logits_in_val)['detection_time'],
-
-                'drift_ks_embs': drift_ks_embs.detect(windowed_embs_in_val)['detection_time'],
-                'drift_ks_logits': drift_ks_logits.detect(windowed_logits_in_val)['detection_time'],
-                'drift_ks_softmaxes': drift_ks_softmaxes.detect(windowed_softmaxes_in_val)['detection_time'],
-
-                'drift_single_softmaxes': drift_single_softmaxes.detect(windowed_logits_in_val)['detection_time'],
-                'drift_single_entropies': drift_single_entropies.detect(windowed_logits_in_val)['detection_time'],
-
-            })
-            if size <= cfg.IMAGENET.EXPERIMENT.MMD_FIT_SIZE:
-                results_dict.in_vs_in[str(size)]['drift_mmd_embs'] = \
-                    drift_mmd_embs.detect(windowed_embs_in_val.numpy())['detection_time']
-                results_dict.in_vs_in[str(size)]['drift_mmd_logits'] = \
-                    drift_mmd_logits.detect(windowed_logits_in_val.numpy())['detection_time']
-                results_dict.in_vs_in[str(size)]['drift_mmd_softmaxes'] = \
-                    drift_mmd_softmaxes.detect(windowed_softmaxes_in_val.numpy())['detection_time']
-
-        pprint.pprint(results_dict)
-        results_dicts.append(results_dict)
-    save_data_to_pickle_file(file_path=cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/detection_times', data=results_dicts)
-
-
-def load_and_plot_detection_times(cfg):
-    path = cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/detection_times'
-    x = load_pickle_file(path)
-    new_x = []
-    for dct in x:
-        new_x.append(dct['in_vs_in'])
-
-    def compute_averages(data):
-        """
-        Computes the average and standard deviation of each method's running time
-        for each number in each run in the given list of dictionaries.
-
-        Arguments:
-        - data: a list of dictionaries, where each dictionary corresponds to a different run
-                and has the format {number: {method: time}}
-
-        Returns:
-        - a dictionary with the same format as the input dictionaries, where each method's
-          average and standard deviation are included as a tuple (average, std)
-        """
-        result = {}
-        for d in data:
-            for number, methods in d.items():
-                if number not in result:
-                    result[number] = {}
-
-                for method, times in methods.items():
-                    if method not in result[number]:
-                        result[number][method] = []
-
-                    result[number][method].append(times)
-
-        for number, methods in result.items():
-            for method, times in methods.items():
-                avg = statistics.mean(times)
-                std = statistics.stdev(times) if len(times) > 1 else 0
-                result[number][method] = (avg, std)
-
-        return result
-
-    data = compute_averages(new_x)
-
-    def apply_mapping(mapping_dict, input_str):
-        """
-        Apply a mapping dictionary to an input string.
-
-        Args:
-            mapping_dict (dict): A dictionary that maps strings to strings.
-            input_str (str): The input string to be mapped.
-
-        Returns:
-            str: The mapped string, or the input string if no mapping is found.
-        """
-        if input_str in mapping_dict:
-            return mapping_dict[input_str]
-        else:
-            return input_str
-
-    # create lists for x values and y values for each method
-    x_values = []
-    y_values = {}
-    std_values = {}
-
-    mapping_dict = {
-        'my_detector': 'Ours',
-
-        'drift_ks_embs': 'KS-BBSD-EMB',
-        'drift_ks_softmaxes': 'KS-BBSD-S',
-
-        'drift_mmd_embs': 'MMD-BBSD-EMB',
-        'drift_mmd_softmaxes': 'MMD-BBSD-S',
-
-        'drift_single_softmaxes': 'Single-SR',
-        'drift_single_entropies': 'Single-Ent',
-
-    }
-    for num, methods in data.items():
-        x_values.append(int(num))
-        for method, values in methods.items():
-            if method not in y_values:
-                y_values[method] = []
-                std_values[method] = []
-            y_values[method].append(values[0])
-            std_values[method].append(values[1])
-
-    fig, ax = plt.subplots()
-    for method in y_values:
-        if 'logits' in method:
-            continue
-        print(f'{method=}_{x_values[:len(y_values[method])]=}_{y_values[method]=}_{std_values[method]=}')
-        color = plt.rcParams['axes.prop_cycle'].by_key()['color'][len(ax.lines) % len(plt.rcParams['axes.prop_cycle'])]
-        ax.plot(x_values[:len(y_values[method])], y_values[method], label=apply_mapping(mapping_dict, method),
-                marker='o', markersize=3, color=color)
-        ax.fill_between(x_values[:len(y_values[method])],
-                        [y - std for y, std in zip(y_values[method], std_values[method])],
-                        [y + std for y, std in zip(y_values[method], std_values[method])], alpha=0.3)
-
-        # Add text for the last value of y_values[method]
-        last_y_value = y_values[method][-1]
-        log_last_y_value = np.log10(last_y_value)
-        log_max_y_value = np.log10(max(y_values[method]))
-
-        # Determine text position based on the flag
-        text_position = 'above'  # set to 'above' or 'below'
-
-        text_y_offset = 0.05 if text_position == 'above' else -0.05
-        text_y_pos = 10 ** (log_last_y_value + text_y_offset * (log_max_y_value - log_last_y_value))
-
-        # Format the last value in scientific notation
-        mantissa, exponent = f'{last_y_value:.2e}'.split('e')
-        mantissa = float(mantissa)
-        exponent = int(exponent)
-
-        # Add text to the plot
-        text_label = f'{mantissa:.2f}$\\times10^{{{exponent}}}$' + '(s)'
-        ha = 'center'
-        va = 'bottom' if text_position == 'above' else 'top'
-        fontsize = 12
-        if method == 'my_detector' or method == 'drift_ks_softmaxes' or method == 'drift_single_softmaxes' or method == 'drift_mmd_embs':
-            ax.text(x_values[len(y_values[method]) - 1], text_y_pos, text_label,
-                    ha=ha, va=va, fontsize=fontsize, color=color)
-
-    # Add arrow between method1 and method2
-
-    # y1 = y_values['my_detector'][-1]
-    # y2 = y_values['drift_ks_softmaxes'][-1]
-    # order_of_mag_diff = math.ceil(np.log10(y2 / y1))
-    # diff_text = f''
-    # # Add arrow and text
-    # arrow_style = dict(facecolor='black', arrowstyle='->', connectionstyle="arc3,rad=0.3")
-    # ax.annotate(diff_text, xy=(x_values[-1], y1), xytext=(x_values[-1], y2),
-    #             arrowprops=arrow_style, ha='center', va='center')
-
-    # # diff = y2 - y1
-    #
-    # order_of_mag_diff = math.ceil(np.log10(y2 / y1))
-    # diff_text = f'X{order_of_mag_diff}'
-    # diff_x_pos = x_values[len(y_values['my_detector']) - 1] + 0.1
-    # diff_y_pos = 10 ** ((np.log10(y1) + np.log10(y2)) / 2.0)
-    # # diff_y_pos = (y1 + y2) / 2.0
-    # ax.annotate(diff_text, xy=(x_values[len(y_values['my_detector']) - 1], y2), xytext=(diff_x_pos, diff_y_pos),
-    #             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='black', lw=1), fontsize=12)
-    #
-    # # plot the data with error bars
-    # fig, ax = plt.subplots()
-    # for method in y_values:
-    #     if 'logits' in method:
-    #         continue
-    #     print(f'{method=}_{x_values[:len(y_values[method])]=}_{y_values[method]=}_{std_values[method]=}')
-    #     color = plt.rcParams['axes.prop_cycle'].by_key()['color'][len(ax.lines) % len(plt.rcParams['axes.prop_cycle'])]
-    #     ax.plot(x_values[:len(y_values[method])], y_values[method], label=apply_mapping(mapping_dict, method),
-    #             marker='o', markersize=3, color=color)
-    #     ax.fill_between(x_values[:len(y_values[method])],
-    #                     [y - std for y, std in zip(y_values[method], std_values[method])],
-    #                     [y + std for y, std in zip(y_values[method], std_values[method])], alpha=0.3)
-    #
-    #     # Add text for the last value of y_values[method]
-    #     last_y_value = y_values[method][-1]
-    #     log_max_y_value = np.log10(max(y_values[method]))
-    #
-    #     # Add text for the last value of y_values[method]
-    #     text_y_pos = 10 ** (log_last_y_value + 0.05 * (log_max_y_value - log_last_y_value))
-    #
-    #     # Format the last value in scientific notation
-    #     mantissa, exponent = f'{last_y_value:.2e}'.split('e')
-    #     mantissa = float(mantissa)
-    #     exponent = int(exponent)
-    #     if apply_mapping(mapping_dict, method) == 'KS-BBSD-S' or apply_mapping(mapping_dict, method) == 'Single-SR' or apply_mapping(mapping_dict, method) == 'Ours':
-    #         ax.text(x_values[len(y_values[method]) - 1], text_y_pos, f'{mantissa:.2f}$\\times10^{{{exponent}}}$' + '(s)',
-    #                 ha='center', va='bottom', fontsize=8, color=color)
-    #
-    #     # # Add text for the last value of y_values[method]
-    #     # last_y_value = y_values[method][-1]
-    #     # ax.text(x_values[len(y_values[method])-1], last_y_value + 0.1, f'{last_y_value:.2f} (s)',
-    #     #         ha='center', va='bottom', fontsize=8)
-
-    ax.set_xlabel('Source size')
-    ax.set_ylabel('Run time (s)')
-    ax.set_xticks(x_values)
-    ax.set_xscale('log')  # set the x-axis to log scale
-    ax.set_ylim(0.0001, 300)  # manually set the limits of the y-axis
-    ax.set_yscale('log')  # set the y-axis to log scale
-    ax.grid(True)  # add grid
-    legend = ax.legend(frameon=True, fancybox=True, shadow=True, borderpad=1, fontsize='small', loc='upper left')
-    legend.get_frame().set_alpha(0.3)  # set the transparency of the legend box
-    legend.set_title('Methods', prop={
-        'size': 'small'})  # set the legend title
-
-    # Save the plot
-    path_to_save = cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/Run_times_updated'
-    plt.savefig(path_to_save)
-    plt.show()
-
-    #
-    # def plot_data(cfg, data):
-    #     # Create the plot
-    #     fig, ax = plt.subplots()
-    #
-    #     # Set the x-axis ticks and labels
-    #     xticks = list(data.keys())
-    #     xticks = [int(x) for x in xticks]
-    #     ax.set_xticks(xticks)
-    #     ax.set_xticklabels(xticks)
-    #
-    #     # Set the y-axis ticks and labels
-    #     yticks = np.arange(0, 7, 0.5)
-    #     ax.set_yticks(yticks)
-    #     ax.set_yticklabels([f'{t:.1f}' for t in yticks])
-    #
-    #     # Iterate over each method and plot its data
-    #
-    #     for i, method in enumerate(data['10'].keys()):
-    #         if 'mmd' in method.split('_'):
-    #             x = list(data.keys())[:4]
-    #         else:
-    #             x = list(data.keys())
-    #         # Set the x-axis ticks and labels
-    #         xticks = list(data.keys())
-    #         xticks = [int(x) for x in xticks]
-    #         ax.set_xticks(xticks)
-    #         ax.set_xticklabels(xticks)
-    #         y = [data[n][method][0] for n in x]
-    #         yerr = [data[n][method][1] for n in x]
-    #
-    #         ax.fill_between(x, [a-b for a,b in zip(y, yerr)], [a+b for a,b in zip(y, yerr)], alpha=0.3, label=method)
-    #         ax.plot(x, y, '-o', markersize=3, label=None)
-    #
-    #     # Add labels and legend
-    #     ax.set_xlabel('Number')
-    #     ax.set_ylabel('Running time (s)')
-    #     ax.legend(title='Method')
-    #
-    #
-    #     # Set the plot title and axis scales
-    #     ax.set_title('Running Time by Method')
-    #     # ax.set_yscale('log')
-    #
-    #     # Save the plot
-    #     path_to_save = cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/run_times' + 'png'
-    #     plt.savefig(path_to_save)
-    #
-    #     # Show the plot
-    #     plt.show()
-    #
-    # plot_data(cfg, data)
-
-
-# ================================ experiments - for user ================================ #
 def run_experiment(cfg):
     # Inference and load in dist and out dist
     path = inference_dataset(cfg, path_to_dataset=cfg.IMAGENET.DATASETS.PATH_TO_IMAGENET, suffix='_imagenet_')
@@ -1078,25 +730,314 @@ def run_experiment(cfg):
                                                   threshold=1 - cfg.MY_DETECTOR.SIGNIFICANCE_LEVEL,
                                                   shift_extra_params=shift_extra_params) if 'drift_single_entropies' in cfg.IMAGENET.EXPERIMENT.DETECTORS else None
 
+def average_all(cfg):
+    baselines = ['drift_ks_embs', 'drift_ks_softmaxes',
+                'drift_mmd_embs', 'drift_mmd_softmaxes', 
+                'drift_single_softmaxes', 'drift_single_entropies',
+                'my_detector']
+    for baseline in baselines:
+        for window_size in cfg.IMAGENET.EXPERIMENT.WINDOW_SIZES:
+            if baseline == 'my_detector':
+                params = '_temp_' + str(cfg.MY_DETECTOR.TEMP) + '_c_num_' + str(cfg.MY_DETECTOR.C_NUM) + '_delta_' + str(cfg.MY_DETECTOR.DELTA) + '_uc_mech_' + str(cfg.MY_DETECTOR.UC_MECH)
+                calculate_averages(parent_path=cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/imagenet',
+                                file_name=str(baseline) + '_window_' + str(
+                                   window_size) + params + '.csv',
+                                new_file_name=cfg.IMAGENET.MODEL + '_AVG_ALL_' + str(baseline) + '_window_' + str(
+                                   window_size) + '.csv',
+                                model = cfg.IMAGENET.MODEL)
+            else:
+                calculate_averages(parent_path=cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/imagenet',
+                                file_name=str(baseline) + '_window_' + str(
+                                   window_size) + '.csv',
+                                new_file_name=cfg.IMAGENET.MODEL + '_AVG_ALL_' + str(baseline) + '_window_' + str(
+                                   window_size) + '.csv',
+                                model = cfg.IMAGENET.MODEL)
+
+
+# ====================================================================================== #
+#                                Detection Times                                         #
+# ====================================================================================== #
+
+def save_detection_times(cfg, seeds=3):
+    # Inference and load in dist and out dist
+    path = inference_dataset(cfg, path_to_dataset=cfg.IMAGENET.DATASETS.PATH_TO_IMAGENET, suffix='_imagenet_')
+    logits_in = load_pickle_file(path)
+    softmaxes_in = F.softmax(logits_in, dim=1)
+    path = inference_dataset(cfg, path_to_dataset=cfg.IMAGENET.DATASETS.PATH_TO_IMAGENET, suffix='_imagenet_',
+                             get_embs=True)
+    embs_in = load_pickle_file(path)
+    (logits_in, softmaxes_in, embs_in) = (
+        shuffle_tensor_rows(logits_in),
+        shuffle_tensor_rows(softmaxes_in),
+        shuffle_tensor_rows(embs_in),
+    )
+    logits_in_train, logits_in_val = split_array(logits_in, cfg.IMAGENET.EXPERIMENT.TRAIN_SIZE)
+    softmaxes_in_train, softmaxes_in_val = split_array(softmaxes_in, cfg.IMAGENET.EXPERIMENT.TRAIN_SIZE)
+    embs_in_train, embs_in_val = split_array(embs_in, cfg.IMAGENET.EXPERIMENT.TRAIN_SIZE)
+    sizes = [10, 100, 1000, 5000, 10000, 20000, 30000, 40000, 1000000]
+    results_dicts = []
+    cfg.IMAGENET.EXPERIMENT.MMD_FIT_SIZE = 1000
+    for i in range(seeds):
+        print('run number ' + str(i))
+        # Initialize results_dict
+        results_dict = edict({})
+        results_dict.in_vs_in = edict({})
+        for size in sizes:
+            print(f'        {size=}')
+            cfg.logging.info(f"Fitting detectors")
+            # Mine
+            # size = 1000000
+            if size > 40000:
+                import numpy as np
+                def concatenate_array(a, N):
+                    K, L = a.shape
+                    if K >= N:
+                        return a[:N, :]
+                    else:
+                        repetitions = (N + K - 1) // K
+                        return torch.tensor(np.concatenate([a] * repetitions, axis=0)[:N, :])
+
+                logits_in_train = concatenate_array(logits_in_train, sizes[-1])
+                softmaxes_in_train = concatenate_array(softmaxes_in_train, sizes[-1])
+                embs_in_train = concatenate_array(embs_in_train, sizes[-1])
+
+            my_detector = MyDetector(c_num=cfg.MY_DETECTOR.C_NUM, delta=cfg.MY_DETECTOR.DELTA,
+                                     temprature=cfg.MY_DETECTOR.TEMP, uncertainty_mechanism=cfg.MY_DETECTOR.UC_MECH)
+            my_detector.fit(logits_in_train[:size])
+            # Ks - embs
+            drift_ks_embs = Ks()
+            drift_ks_embs.fit(embs_in_train[:size])
+            # Ks - logits
+            drift_ks_logits = Ks()
+            drift_ks_logits.fit(logits_in_train[:size])
+            # Ks - softmax
+            drift_ks_softmaxes = Ks()
+            drift_ks_softmaxes.fit(softmaxes_in_train[:size])
+            # Single instance - softmax
+            drift_single_softmaxes = Single_SR()
+            drift_single_softmaxes.fit(logits_in_train[:size])
+            # Single instance - entropy
+            drift_single_entropies = Single_Ent()
+            drift_single_entropies.fit(logits_in_train[:size])
+
+            if size <= cfg.IMAGENET.EXPERIMENT.MMD_FIT_SIZE:
+                # Mmd - embs
+                drift_mmd_embs = Mmd()
+                drift_mmd_embs.fit(embs_in_train[:size].numpy())
+                # Mmd - logits
+                drift_mmd_logits = Mmd()
+                drift_mmd_logits.fit(logits_in_train[:size].numpy())
+                # Mmd - softmax
+                drift_mmd_softmaxes = Mmd()
+                drift_mmd_softmaxes.fit(softmaxes_in_train[:size].numpy())
+
+            # detect in_vs_in
+            window_size = 10
+            cfg.logging.info(f"Detecting")
+            windowed_embs_in_val, windowed_logits_in_val, windowed_softmaxes_in_val = embs_in_val[
+                                                                                      :window_size], logits_in_val[
+                                                                                                     :window_size], softmaxes_in_val[
+                                                                                                                    :window_size]
+            results_dict.in_vs_in[str(size)] = edict({
+                'my_detector': my_detector.detect(windowed_logits_in_val)['detection_time'],
+
+                'drift_ks_embs': drift_ks_embs.detect(windowed_embs_in_val)['detection_time'],
+                'drift_ks_logits': drift_ks_logits.detect(windowed_logits_in_val)['detection_time'],
+                'drift_ks_softmaxes': drift_ks_softmaxes.detect(windowed_softmaxes_in_val)['detection_time'],
+
+                'drift_single_softmaxes': drift_single_softmaxes.detect(windowed_logits_in_val)['detection_time'],
+                'drift_single_entropies': drift_single_entropies.detect(windowed_logits_in_val)['detection_time'],
+
+            })
+            if size <= cfg.IMAGENET.EXPERIMENT.MMD_FIT_SIZE:
+                results_dict.in_vs_in[str(size)]['drift_mmd_embs'] = \
+                    drift_mmd_embs.detect(windowed_embs_in_val.numpy())['detection_time']
+                results_dict.in_vs_in[str(size)]['drift_mmd_logits'] = \
+                    drift_mmd_logits.detect(windowed_logits_in_val.numpy())['detection_time']
+                results_dict.in_vs_in[str(size)]['drift_mmd_softmaxes'] = \
+                    drift_mmd_softmaxes.detect(windowed_softmaxes_in_val.numpy())['detection_time']
+
+        pprint.pprint(results_dict)
+        results_dicts.append(results_dict)
+    save_data_to_pickle_file(file_path=cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/detection_times', data=results_dicts)
+
+
+def load_and_plot_detection_times(cfg):
+    path = cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/detection_times'
+    x = load_pickle_file(path)
+    new_x = []
+    for dct in x:
+        new_x.append(dct['in_vs_in'])
+
+    def compute_averages(data):
+        """
+        Computes the average and standard deviation of each method's running time
+        for each number in each run in the given list of dictionaries.
+
+        Arguments:
+        - data: a list of dictionaries, where each dictionary corresponds to a different run
+                and has the format {number: {method: time}}
+
+        Returns:
+        - a dictionary with the same format as the input dictionaries, where each method's
+          average and standard deviation are included as a tuple (average, std)
+        """
+        result = {}
+        for d in data:
+            for number, methods in d.items():
+                if number not in result:
+                    result[number] = {}
+
+                for method, times in methods.items():
+                    if method not in result[number]:
+                        result[number][method] = []
+
+                    result[number][method].append(times)
+
+        for number, methods in result.items():
+            for method, times in methods.items():
+                avg = statistics.mean(times)
+                std = statistics.stdev(times) if len(times) > 1 else 0
+                result[number][method] = (avg, std)
+
+        return result
+
+    data = compute_averages(new_x)
+
+    def apply_mapping(mapping_dict, input_str):
+        """
+        Apply a mapping dictionary to an input string.
+
+        Args:
+            mapping_dict (dict): A dictionary that maps strings to strings.
+            input_str (str): The input string to be mapped.
+
+        Returns:
+            str: The mapped string, or the input string if no mapping is found.
+        """
+        if input_str in mapping_dict:
+            return mapping_dict[input_str]
+        else:
+            return input_str
+
+    # create lists for x values and y values for each method
+    x_values = []
+    y_values = {}
+    std_values = {}
+
+    mapping_dict = {
+        'my_detector': 'CBD (Ours)',
+
+        'drift_ks_embs': 'KS-Embeddings',
+        'drift_ks_softmaxes': 'KS-Softmax',
+
+        'drift_mmd_embs': 'MMD-Embeddings',
+        'drift_mmd_softmaxes': 'MMD-Softmax',
+
+        'drift_single_softmaxes': 'Single-SR',
+        'drift_single_entropies': 'Single-Ent',
+        
+        
+        # 'drift_ks_embs': 'KS-BBSD-EMB',
+        # 'drift_ks_softmaxes': 'KS-BBSD-S',
+
+        # 'drift_mmd_embs': 'MMD-BBSD-EMB',
+        # 'drift_mmd_softmaxes': 'MMD-BBSD-S',
+
+
+    }
+    for num, methods in data.items():
+        x_values.append(int(num))
+        for method, values in methods.items():
+            if method not in y_values:
+                y_values[method] = []
+                std_values[method] = []
+            y_values[method].append(values[0])
+            std_values[method].append(values[1])
+
+    fig, ax = plt.subplots()
+    for method in y_values:
+        if 'logits' in method:
+            continue
+        if 'drift_single_entropies' in method:
+            continue
+        if 'drift_single_softmaxes' in method:
+            continue
+        print(f'{method=}_{x_values[:len(y_values[method])]=}_{y_values[method]=}_{std_values[method]=}')
+        color = plt.rcParams['axes.prop_cycle'].by_key()['color'][len(ax.lines) % len(plt.rcParams['axes.prop_cycle'])]
+        ax.plot(x_values[:len(y_values[method])], y_values[method], label=apply_mapping(mapping_dict, method),
+                marker='o', markersize=3, color=color)
+        ax.fill_between(x_values[:len(y_values[method])],
+                        [y - std for y, std in zip(y_values[method], std_values[method])],
+                        [y + std for y, std in zip(y_values[method], std_values[method])], alpha=0.3)
+
+        # Add text for the last value of y_values[method]
+        last_y_value = y_values[method][-1]
+        log_last_y_value = np.log10(last_y_value)
+        log_max_y_value = np.log10(max(y_values[method]))
+
+        # Determine text position based on the flag
+        text_position = 'above'  # set to 'above' or 'below'
+
+        text_y_offset = 0.05 if text_position == 'above' else -0.05
+        text_y_pos = 10 ** (log_last_y_value + text_y_offset * (log_max_y_value - log_last_y_value))
+
+        # Format the last value in scientific notation
+        mantissa, exponent = f'{last_y_value:.2e}'.split('e')
+        mantissa = float(mantissa)
+        exponent = int(exponent)
+
+        # Add text to the plot
+        text_label = f'{mantissa:.2f}$\\times10^{{{exponent}}}$' + '(s)'
+        ha = 'center'
+        va = 'bottom' if text_position == 'above' else 'top'
+        fontsize = 14
+        if method == 'my_detector' or method == 'drift_ks_softmaxes' or method == 'drift_single_softmaxes' or method == 'drift_mmd_embs':
+            ax.text(x_values[len(y_values[method]) - 1], text_y_pos, text_label,
+                    ha=ha, va=va, fontsize=fontsize, color=color)
+
+
+    ax.set_xlabel(f'Detection-training set size $(m)$', fontsize=15)
+    ax.set_ylabel('Run-time (s)', fontsize=15)
+    # ax.set_xlabel('Source size')
+    # ax.set_ylabel('Run time (s)')
+    ax.set_xticks(x_values)
+    ax.set_xscale('log')  # set the x-axis to log scale
+    ax.set_ylim(0.0001, 300)  # manually set the limits of the y-axis
+    ax.set_yscale('log')  # set the y-axis to log scale
+    ax.grid(True)  # add grid
+
+    ax.tick_params(axis='both', which='major', labelsize=12, size=5)
+    # Shrink current axis by 20%
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Set the legend outside the plot
+    legend = ax.legend(frameon=True, fancybox=True, shadow=False, borderpad=1, fontsize='medium',
+                       loc='upper left',
+                    #    bbox_to_anchor=(1.34, 0.94)
+                       )
+    # Set the title of the legend
+    legend.set_title("Methods", prop={
+        'size': 'large',
+        'weight': 'bold'})
+
+    legend.get_frame().set_alpha(0.3)  # set the transparency of the legend box
+
+    # Save the plot
+    path_to_save = cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/Run_times.pdf'
+    plt.tight_layout()
+    plt.savefig(path_to_save, bbox_inches='tight')
+    plt.show()
+
+
+# ====================================================================================== #
+#                                Ablation Study                                          #
+# ====================================================================================== #
+# TODO: Update this part for the final paper
 
 def ablation_study(cfg):
     cfg.IMAGENET.EXPERIMENT.DETECTORS = ['my_detector']
-    # oods = ['imagenet_a', 'fgsm', 'pgd', 'cw', 'imagenet_o', 'imagenet_zoom', 'imagenet_gaussian_noise',
-    #         'imagenet_rotate']
-    c_nums = [50]
-    deltas = [0.01, 0.001]
-    temps = [100, 10, 5, 1, 0.1]
-    uc_mechs = ['SR']
-    # c_nums = [100]
-    # deltas = [0.001]
-    # temps = [10]
-    # uc_mechs = ['SR']
-    c_nums = [50]
-    deltas = [0.01, 0.001]
-    temps = [100, 10, 5, 1, 0.1]
-    uc_mechs = ['SR', 'Ent']
-
-    # ====
     c_nums = [10, 25, 50, 100]
     deltas = [0.0001, 0.001, 0.01, 0.05]
     temps = [1]
@@ -1105,7 +1046,6 @@ def ablation_study(cfg):
         for c_num in c_nums:
             for delta in deltas:
                 for tmp in temps:
-
                     cfg.MY_DETECTOR.C_NUM = c_num
                     cfg.MY_DETECTOR.DELTA = delta
                     cfg.MY_DETECTOR.TEMP = tmp
@@ -1132,21 +1072,7 @@ def ablation_study(cfg):
                     else:
                         run_experiment(cfg)
 
-
-def average_all_baselines(cfg):
-    baselines = ['drift_ks_embs', 'drift_ks_logits', 'drift_ks_softmaxes',
-                 'drift_mmd_embs', 'drift_mmd_logits', 'drift_mmd_softmaxes', 'drift_single_softmaxes',
-                 'drift_single_entropies']
-    for baseline in baselines:
-        for window_size in cfg.IMAGENET.EXPERIMENT.WINDOW_SIZES:
-            calculate_averages(parent_path='/home/guy.b/code_updated/imagenet_experiments/imagenet',
-                               file_name=str(baseline) + '_window_' + str(
-                                   window_size) + '.csv',
-                               new_file_name='AVG_ALL_' + str(baselines) + '_window_' + str(
-                                   window_size) + '.csv')
-
-
-def average_all_ablations(cfg):
+def average_ablations_study(cfg):
     c_nums = [5, 10, 20, 30]
     deltas = [0.01, 0.001]
     temps = [2, 1, 0.5]
@@ -1157,8 +1083,7 @@ def average_all_ablations(cfg):
                 for delta in deltas:
                     for tmp in temps:
                         suffix_for_file_name = f'_temp_{tmp}_c_num_{c_num}_delta_{delta}_uc_mech_{uc_mech}'
-                        # suffix_for_file_name = f'_temp_{cfg.MY_DETECTOR.TEMP}_c_num_{cfg.MY_DETECTOR.C_NUM}_delta_{cfg.MY_DETECTOR.DELTA}_uc_mech_{cfg.MY_DETECTOR.UC_MECH}'
-                        calculate_averages(parent_path='/home/guy.b/code_updated/imagenet_experiments/imagenet',
+                        calculate_averages(parent_path=cfg.IMAGENET.EXPERIMENT.PATH_TO_RESULTS + '/imagenet',
                                            file_name='my_detector_window_' + str(
                                                window_size) + suffix_for_file_name + '.csv',
                                            new_file_name='AVG_ALL_my_detector_window_' + str(
