@@ -8,257 +8,257 @@
 
 echo "Inferencing and detecting"
 
-# for var in "$@"
-# do
-#   echo "$var"
-#   python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_o' \
-#   --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   --IMAGENET.NUM_WORKERS=4 \
-#   --IMAGENET.DEVICE_INDEX=0 \
-#   --MY_DETECTOR.C_NUM=10 \
-#   --MY_DETECTOR.DELTA=0.01 \
-#   --MY_DETECTOR.UC_MECH='Ent' \
-#   --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   --MY_DETECTOR.TEMP=1 \
-#   --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   --IMAGENET.MODEL="$var"
+for var in "$@"
+do
+  echo "$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_o' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_a' \
-#   --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   --IMAGENET.NUM_WORKERS=4 \
-#   --IMAGENET.DEVICE_INDEX=0 \
-#   --MY_DETECTOR.C_NUM=10 \
-#   --MY_DETECTOR.DELTA=0.01 \
-#   --MY_DETECTOR.UC_MECH='Ent' \
-#   --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   --MY_DETECTOR.TEMP=1 \
-#   --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_a' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=0.1 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
+  --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=0.1 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=0.3 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
+  --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=0.3 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=0.5 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
+  --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=0.5 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=1 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_gaussian_noise' \
+  --IMAGENET.DATASETS.GENERATING_OOD.GAUSS_NOISE.STD=1 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.9 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.9 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.7 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.7 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.5 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.5 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.3 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_zoom' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ZOOM.FACTOR=0.3 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=5 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=5 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=10 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=10 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=20 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=20 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=25 \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='imagenet_rotate' \
+  --IMAGENET.DATASETS.GENERATING_OOD.ROTATE.ANGLE=25 \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.0001 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.0001 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.0003 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.0003 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.0005 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.0005 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.00007 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
+  python main.py --IMAGENET.EXPERIMENT.OOD='fgsm' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --IMAGENET.DATASETS.GENERATING_OOD.FGSM.EPS=0.00007 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
 
-#   # python main.py --IMAGENET.EXPERIMENT.OOD='pgd' \
-#   # --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
-#   # --IMAGENET.NUM_WORKERS=4 \
-#   # --IMAGENET.DEVICE_INDEX=0 \
-#   # --MY_DETECTOR.C_NUM=10 \
-#   # --MY_DETECTOR.DELTA=0.01 \
-#   # --MY_DETECTOR.UC_MECH='Ent' \
-#   # --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
-#   # --MY_DETECTOR.TEMP=1 \
-#   # --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
-#   # --IMAGENET.MODEL="$var"
-# done
+  python main.py --IMAGENET.EXPERIMENT.OOD='pgd' \
+  --IMAGENET.EXPERIMENT.DETECTORS 'my_detector' 'drift_ks_embs' 'drift_ks_softmaxes' 'drift_mmd_embs' 'drift_mmd_softmaxes' 'drift_single_softmaxes' 'drift_single_entropies' \
+  --IMAGENET.NUM_WORKERS=4 \
+  --IMAGENET.DEVICE_INDEX=0 \
+  --MY_DETECTOR.C_NUM=10 \
+  --MY_DETECTOR.DELTA=0.01 \
+  --MY_DETECTOR.UC_MECH='Ent' \
+  --MY_DETECTOR.SIGNIFICANCE_LEVEL=0.05 \
+  --MY_DETECTOR.TEMP=1 \
+  --IMAGENET.EXPERIMENT.NUM_RANDOM_RUNS=15 \
+  --IMAGENET.MODEL="$var"
+done
 
 # Averaging Results
 echo "Averaging Results"

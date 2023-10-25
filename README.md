@@ -3,7 +3,7 @@
 Welcome to the official repository for our research paper: **"Window-Based Distribution Shift Detection for Deep Neural Networks"** 📜 **NeurIPS 2023**.
 
 ## 📝 **TL;DR**:
-This repository contains the official code for replicating our [experiments](#🔄-replicating-results) detailed in the paper. Additionally, we provide a practical guide, accessible through a [Python notebook](#📓-explore-with-the-distribution-shift-detector-notebook), to enhance your comprehension of our proposed methodology. Within the notebook, we illustrate how to employ this distribution shift detector with your own dataset.
+This repository contains the official code for replicating our [experiments](#-replicating-results) detailed in the paper. Additionally, we provide a practical guide, accessible through a [Python notebook](#-explore-with-the-distribution-shift-detector-notebook), to enhance your comprehension of our proposed methodology. Within the notebook, we illustrate how to employ this distribution shift detector with your own dataset.
 <!-- Our methodology is intricately designed to pinpoint deviations in the input distribution that could potentially compromise the accuracy of a deep neural network's predictions. Grounded in the principles of selective prediction, our approach continuously monitors the network's behavior across a designated test window, issuing alerts upon anomaly detection. Notably, it outperforms contemporary techniques in the ImageNet dataset, delivering superior efficiency in both temporal and spatial realms. -->
 
 <table>
