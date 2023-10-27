@@ -93,9 +93,8 @@ Dive into our hands-on Jupyter notebook here:
 [Distribution Shift Detector Notebook](./playground/Distribution%20shift%20playground.ipynb)
 
 In this interactive guide:
-- **Walkthrough**: Understand the step-by-step process to leverage our distribution shift detector.
-- **Illustrative Examples**: Witness the power of our methodology through visual and practical demonstrations.
-- **Your Own Dataset**: Learn how to apply our distribution shift detection on your custom datasets, making it adaptable to your unique needs.
+- **Walkthrough**: Understand the step-by-step process to leverage our distribution shift detector with illustrative and practical demonstrations.
+- **Your Own Data**: Learn how to apply our distribution shift detector on your own data.
 
 
 
